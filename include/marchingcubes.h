@@ -136,7 +136,8 @@ struct Simulation {
 	std::vector<glm::vec3> points;
 	int num_points = 0;
 	std::vector<glm::vec3> normals;
-	std::vector<glm::vec3> cols; 
+	std::vector<glm::vec3> cols;
+	std::vector<GLint> indexes; 
 
 	void flip(long x, long y, long z);
 	void flip_cells();
@@ -162,9 +163,9 @@ struct Simulation {
 					   size_t y_max, 
 					   size_t z_max,
 					   float scale,  
-					   std::vector<int> colors, 
+					   std::vector<glm::vec3> color_map, 
 					   std::vector<float> the_pressures,
-					   std::vector<coord> bubbles,
+					   std::vector<fcoord> bubbles,
 					   std::vector<float> radii);
 	~Simulation();
 	void render();

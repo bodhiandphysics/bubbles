@@ -22,4 +22,8 @@ void GPU_Geometry::setUVs(const std::vector<glm::vec2>& uvs) {
 
 void GPU_Geometry::setNormals(const std::vector<glm::vec3>& norms) {
 	normalsBuffer.uploadData(sizeof(glm::vec3) * norms.size(), norms.data(), GL_STATIC_DRAW);
+
+void GPU_Geomtry::setIndexes(const std::vector<GLuint>& indexes) {
+	indexBuffer.uploadData(sizeof(GLuint * indexes.size(), indexes.data(), GL_STATIC_DRAW));
+}
 }

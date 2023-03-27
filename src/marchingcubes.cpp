@@ -105,12 +105,14 @@ void Simulation::render() {
 					normals.push_back(normal * *angs[i]);
 					angles.push_back(*angs[i]);
 
-					point_map[*coords[i]] = points.size() - 1; 
+					point_map[*coords[i]] = points.size() - 1;
+					indexes.push_back(points.size() - 1); 
 					}
 					else {
 						size_t index = point_map[*coords[i]];
 						normals[index] += normal * *angs[i];
 						angles[index] += *angs[i];
+						indexes.push_back(GLint(index));
 					}
 
 				}

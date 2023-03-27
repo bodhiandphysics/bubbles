@@ -156,6 +156,34 @@ private:
 };
 
 // An RAII class for managing a VertexBuffer GLuint for OpenGL.
+class IndexBufferHandle {
+
+public:
+	IndexBufferHandle();
+
+	// Disallow copying
+	IndexBufferHandle(const IndexBufferHandle&) = delete;
+	IndexBufferHandle operator=(const IndexBufferHandle&) = delete;
+
+	// Allow moving
+	IndexBufferHandle(IndexBufferHandle&& other) noexcept;
+	IndexBufferHandle& operator=(IndexBufferHandle&& other) noexcept;
+
+	// Clean up after ourselves.
+	~VertexBufferHandle();
+
+
+	// Allow casting from this type into a GLuint
+	// This allows usage in situations where a function expects a GLuint
+	operator GLuint() const;
+	GLuint value() const;
+
+private:
+	GLuint iboID;
+
+};
+
+// An RAII class for managing a VertexBuffer GLuint for OpenGL.
 class TextureHandle {
 
 public:

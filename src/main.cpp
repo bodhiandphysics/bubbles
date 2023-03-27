@@ -156,31 +156,6 @@ private:
 
 };
 
-// You may want to make your own class to replace this one.
-class ModelInfo {
-public:
-	ModelInfo(std::string fileName)
-		: fileName(fileName)
-	{
-		// Uses our .obj loader (relying on the tinyobjloader library).
-		cpuGeom = GeomLoaderForOBJ::loadIntoCPUGeometry(fileName);
-		gpuGeom.bind();
-		gpuGeom.setVerts(cpuGeom.verts);
-		gpuGeom.setNormals(cpuGeom.normals);
-		gpuGeom.setUVs(cpuGeom.uvs);
-	}
-
-	void bind() { gpuGeom.bind(); }
-
-	size_t numVerts() { return cpuGeom.verts.size(); }
-
-	bool hasUVs() { return (cpuGeom.uvs.size() > 0); }
-
-private:
-	std::string fileName;
-	CPU_Geometry cpuGeom;
-	GPU_Geometry gpuGeom;
-};
 
 
 int main() {
@@ -192,6 +167,10 @@ int main() {
 
 	GLDebug::enable();
 
+	//Geometry
+
+	GPU_Geometry bubbles;
+
 	// SHADERS
 	ShaderProgram shader("shaders/test.vert", "shaders/test.frag");
 
@@ -200,38 +179,6 @@ int main() {
 	window.setCallbacks(cb);
 
 	window.setupImGui(); // Make sure this call comes AFTER GLFW callbacks set.
-
-
-	// A "dictionary" that maps models' ImGui display names to their ModelInfo.
-	// Because ModelInfo has no default constructor
-	// (and there's no good one for it in its current form)
-	// We have to use .at() and .emplace() instead of "[]" notation.
-	// See: https://stackoverflow.com/questions/29826155/why-a-default-constructor-is-needed-using-unordered-map-and-tuple
-	std::unordered_map<std::string, ModelInfo> models;
-	models.emplace("Cow", ModelInfo("./models/spot/spot_triangulated.obj"));
-	models.emplace("Fish", ModelInfo("./models/blub/blub_triangulated.obj"));
-	models.emplace("Torus", ModelInfo("./models/torus.obj"));
-
-	// Select first model by default.
-	std::string selectedModelName = models.begin()->first;
-	models.at(selectedModelName).bind(); // Bind it.
-
-	// A "dictionary" that maps textures' ImGui display names to their Texture.
-	// Because Texture has no default constructor
-	// (and there's no good one for it in its current form)
-	// We have to use .at() and .emplace() instead of "[]" notation.
-	// See: https://stackoverflow.com/questions/29826155/why-a-default-constructor-is-needed-using-unordered-map-and-tuple
-	std::unordered_map<std::string, Texture> textures;
-	textures.emplace("Cow", Texture("./textures/spot/spot_texture.png", GL_LINEAR));
-	textures.emplace("Fish", Texture("./textures/blub/blub_texture.png", GL_LINEAR));
-	const std::string noTexName = "None";
-
-	// Select first texture by default.
-	std::string selectedTexName = textures.begin()->first;
-	textures.at(selectedTexName).bind(); // Bind it.
-
-	// Say we're using textures (if the model supports them).
-	bool texExistence = models.at(selectedModelName).hasUVs();
 
 	// Some variables for shading that ImGui may alter.
 	glm::vec3 lightPos(0.f, 35.f, -35.f);
@@ -244,6 +191,15 @@ int main() {
 	shader.use();
 	cb->updateShadingUniforms(lightPos, lightCol, diffuseCol, ambientStrength, texExistence);
 
+	std::vector<glm::vec3> cmap = {glm::vec3(0), glm::vec3{1.f, 0.f, 0.f}};
+	std::vector<float> P0 = {.5f, 1.f};
+	std::vector<fcoord> x0 = {fcoord(5.f, 5.f, 5.f)};
+	std::vector<float> r0 = {1.f};
+
+	Simulation sim = Simulation(
+								128, 128, 128, .1f // 128 by 128 by 128 voxels at .1 scale
+								P0, x0, r0 // pressures, positions, radius
+ 								)
 
 	// RENDER LOOP
 	while (!window.shouldClose()) {
@@ -254,100 +210,25 @@ int main() {
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-
-		ImGui::Begin("Sample window.");
-
-		bool change = false; // Whether any ImGui variable's changed.
-
-		// A drop-down box for choosing the 3D model to render.
-		if (ImGui::BeginCombo("Model", selectedModelName.c_str()))
-		{
-			// Iterate over our dictionary's key-val pairs.
-			for (auto& keyVal : models) {
-				// Check if this key (a model display name) was last selected.
-				const bool isSelected = (selectedModelName == keyVal.first);
-
-				// Now check if the user is currently selecting that model.
-				// The use of "isSelected" just changes the colour of the box.
-				if (ImGui::Selectable(keyVal.first.c_str(), isSelected))
-				{
-					selectedModelName = keyVal.first;
-					keyVal.second.bind(); // Bind the selected model.
-				}
-				// Sets the initial focus when the combo is opened
-				if (isSelected) ImGui::SetItemDefaultFocus();
-			}
-			ImGui::EndCombo();
-			change = true;
-		}
-
-		// Only display the texture dropdown if applicable.
-		if (models.at(selectedModelName).hasUVs())
-		{
-			// A drop-down box for choosing the texture to use.
-			if (ImGui::BeginCombo("Texture", selectedTexName.c_str()))
-			{
-				// First, display an option to select NO texture!
-				const bool noneSelected = selectedTexName == noTexName;
-				if (ImGui::Selectable(noTexName.c_str(), noneSelected))
-				{
-					selectedTexName = noTexName;
-				}
-				if (noneSelected) ImGui::SetItemDefaultFocus();
-
-				// Then, present our dictionary's contents as other texture options.
-				for (auto& keyVal : textures) {
-					// Check if this key (a model display name) was last selected.
-					const bool isSelected = (selectedTexName == keyVal.first);
-					// Now check if the user is currently selecting that texture.
-					// The use of "isSelected" just changes the colour of the box.
-					if (ImGui::Selectable(keyVal.first.c_str(), isSelected))
-					{
-						selectedTexName = keyVal.first;
-						keyVal.second.bind(); // Bind the selected texture.
-					}
-					// Sets the initial focus when the combo is opened
-					if (isSelected) ImGui::SetItemDefaultFocus();
-				}
-				ImGui::EndCombo();
-				change = true;
-			}
-		}
-
-		// We'll only render with a texture if the model has UVs and a texture was chosen.
-		texExistence = (models.at(selectedModelName).hasUVs() && selectedTexName != noTexName);
-
-		// If a texture is not in use, the user can pick the diffuse colour.
-		if (!texExistence) change |= ImGui::ColorEdit3("Diffuse colour", glm::value_ptr(diffuseCol));
-
-		// The rest of our ImGui widgets.
-		change |= ImGui::DragFloat3("Light's position", glm::value_ptr(lightPos));
-		change |= ImGui::ColorEdit3("Light's colour", glm::value_ptr(lightCol));
-		change |= ImGui::SliderFloat("Ambient strength", &ambientStrength, 0.0f, 1.f);
-		change |= ImGui::Checkbox("Simple wireframe", &simpleWireframe);
-
-		// Framerate display, in case you need to debug performance.
-		ImGui::Text("Average %.1f ms/frame (%.1f fps)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		ImGui::End();
 		ImGui::Render();
 
 		glEnable(GL_LINE_SMOOTH);
 		glEnable(GL_FRAMEBUFFER_SRGB);
-		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
-		glPolygonMode(GL_FRONT_AND_BACK, (simpleWireframe ? GL_LINE : GL_FILL) );
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		shader.use();
-		if (change)
-		{
-			// If any of our shading values was updated, we need to update the
-			// respective GLSL uniforms.
-			cb->updateShadingUniforms(lightPos, lightCol, diffuseCol, ambientStrength, texExistence);
-		}
 		cb->viewPipeline();
 
-		glDrawArrays(GL_TRIANGLES, 0, GLsizei(models.at(selectedModelName).numVerts()));
+		sim.render();
+		bubles.setVerts(sim.points);
+		bubbles.setCols(sim.cols);
+		bubbles.setNormals(sim.normals);
+		bubbles.setIndexes(sim.indexes);
+		bubbles.readydraw(); 
+		glDrawElements(GL_TRIANGLES, GLsizei(sim.indexes.size()), GL_UNSIGNED_INT, 0);
 
 		glDisable(GL_FRAMEBUFFER_SRGB); // disable sRGB for things like imgui
 

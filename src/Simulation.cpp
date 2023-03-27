@@ -3,14 +3,14 @@ Simulation::Simulation(size_t x_max,
 					   size_t y_max, 
 					   size_t z_max,
 					   float scale,  
-					   std::vector<int> colors, 
+					   std::vector<glm::vec3> color_map, 
 					   std::vector<float> the_pressures,
-					   std::vector<coord> bubbles,
+					   std::vector<fcoord> bubbles,
 					   std::vector<float> radii):  border_length(0),
 												   bborder_length(0),
 												   grid(x_max, y_max, z_max), 
-												   scale(scale), colors(colors), 
-												   num_colors(colors.size()) {
+												   scale(scale), color_map(color_map, 
+												   num_colors(color_map.size()) {
 
 
 

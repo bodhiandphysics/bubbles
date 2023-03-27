@@ -15,14 +15,6 @@
 #include <vector>
 
 
-// List of vertices and texture coordinates using std::vector and glm::vec3
-struct CPU_Geometry {
-	std::vector<glm::vec3> verts;
-	std::vector<glm::vec2> uvs;
-	std::vector<glm::vec3> normals;
-};
-
-
 // VAO and two VBOs for storing vertices and texture coordinates, respectively
 class GPU_Geometry {
 
@@ -31,9 +23,10 @@ public:
 
 	// Public interface
 	void bind() { vao.bind(); }
+	void readydraw() {vao.bind(); indexBuffer.bind();}
 
 	void setVerts(const std::vector<glm::vec3>& verts);
-	void setUVs(const std::vector<glm::vec2>& uvs);
+	void setIndexes(const std::vector<GLuint>& indexes);
 	void setNormals(const std::vector<glm::vec3>& norms);
 
 private:
@@ -42,6 +35,6 @@ private:
 	VertexArray vao;
 
 	VertexBuffer vertBuffer;
-	VertexBuffer uvBuffer;
 	VertexBuffer normalsBuffer;
+	IndexBuffer  indexBuffer;
 };
