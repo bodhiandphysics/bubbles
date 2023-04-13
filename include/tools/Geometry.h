@@ -8,6 +8,7 @@
 
 #include "VertexArray.h"
 #include "VertexBuffer.h"
+#include "IndexBuffer.h"
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -27,6 +28,7 @@ public:
 
 	void setVerts(const std::vector<glm::vec3>& verts);
 	void setIndexes(const std::vector<GLuint>& indexes);
+	void setCols(const std::vector<glm::vec3>& cols);
 	void setNormals(const std::vector<glm::vec3>& norms);
 
 private:
@@ -36,5 +38,6 @@ private:
 
 	VertexBuffer vertBuffer;
 	VertexBuffer normalsBuffer;
+	VertexBuffer colsBuffer;
 	IndexBuffer  indexBuffer;
 };

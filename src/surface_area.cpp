@@ -11,8 +11,8 @@ u_char Simulation::get_index_flipped(int color, long x, long y, long z, int fcol
 
 	int check_color = 0; 
 
-	for (int i = 0; i <= 1; i++)
-		for (int j = 0; j <= 1; j++)
+	for (int i = 0; i <= 1; i++) {
+		for (int j = 0; j <= 1; j++) {
 			for (int k = 0; k <= 1; k++) {
 				auto cell = grid(x + i,y + j,z + k);
 				if (cell) { 
@@ -21,6 +21,8 @@ u_char Simulation::get_index_flipped(int color, long x, long y, long z, int fcol
 					else check_color = old? cell->color: cell->new_color;
 				} else check_color = BOUNDARY;
 				if (color == check_color) retval |= MASK_TABLE[i][j][k];
+			}
+		}
 	}
 	return retval;
 
@@ -31,14 +33,16 @@ u_char Simulation::get_index(int color, long x, long y, long z, bool old) {
 	u_char retval = 0;
 	int check_color = 0;
 
-	for (int i = 0; i <= 1; i++)
-		for (int j = 0; j <= 1; j++)
+	for (int i = 0; i <= 1; i++) {
+		for (int j = 0; j <= 1; j++) {
 			for (int k = 0; k <= 1; k++) {
 				auto cell = grid(x + i,y + j,z + k);
 				if (cell)
 					check_color = old? cell->color: cell->new_color;
 				else check_color = BOUNDARY;
 				if (color == check_color) retval |= MASK_TABLE[i][j][k];
+			}
+		}
 	}
 	return retval;
 }
@@ -53,16 +57,17 @@ float Simulation::get_surface_area(long x, long y, long z, bool old,
 	float sa_return = 0.f;
 
 
-	for (int i = 0; i <= 1; i++)
-		for (int j = 0; j <= 1; j++)
+	for (int i = 0; i <= 1; i++) {
+		for (int j = 0; j <= 1; j++) {
 			for (int k = 0; k <=1; k++) {
 
 				auto cell = grid(x + i, y + j, z + k);
-				if (cell && old && is_present(cell->color, local_colors, num_local_colors))
-					colors[num_local_colors++] == cell->color;
-				if (cell && !old && is_present(cell->new_color, local_colors, num_local_colors))
-					colors[num_local_colors++] == cell->new_color;
-				
+				if (cell && old && !is_present(cell->color, local_colors, num_local_colors))
+					local_colors[num_local_colors++] = cell->color;
+				if (cell && !old && !is_present(cell->new_color, local_colors, num_local_colors))
+					local_colors[num_local_colors++] = cell->new_color;
+			}
+		}			
 	}
 
 	for (int i = 0; i < num_local_colors; i++) {
@@ -82,22 +87,29 @@ float Simulation::get_surface_area(long x, long y, long z, bool old,
 
 }
 
-bool Simulation::on_border(long x, long y, long z) {
+bool Simulation::on_border(long x, long y, long z, bool old) {
 
 	int check_color = BOUNDARY;
-	if (auto cell = grid(x, y, z))
-		check_color = cell->color;
-	for (long k = z-1; k <= z+1; k++)
-		for (long j = y - 1; j <= y+1; j++)
+	if (auto cell = grid(x, y, z)) {
+		check_color = old? cell->color: cell->new_color;
+		if (cell->color == BOUNDARY) return false;
+	}
+	for (long k = z-1; k <= z+1; k++) {
+		for (long j = y - 1; j <= y+1; j++) {
 			for (long i = x-1; i <= x+1; i++) {
 
 				if (i == x && j == y && k == z) continue;
 				if (!grid(i, j, k)) continue;
+				auto other_color = old? grid(i,j,k)->color: grid(i,j,k)->new_color;
+				if (check_color == BOUNDARY && other_color == FREESPACE) continue;
+				if (check_color == FREESPACE && other_color == BOUNDARY) continue;
 
-				if ((grid(i, j, k))->color != check_color)
+				if (other_color != check_color)
 					return true;
 
 			}
+		}
+	}
 
 	return false;
 }
@@ -106,8 +118,8 @@ bool Simulation::on_border(coord at) {return on_border(at.x, at.y, at.z);}
 
 bool Simulation::next_to_border(long x, long y, long z) {
 
-	for (long k = 0; k <= 1; k++)
-		for (long j = 0; j <= 1; j++)
+	for (long k = 0; k <= 1; k++) {
+		for (long j = 0; j <= 1; j++) {
 			for (long i = 0; i <= x; i++) {
 
 				if (i == 0 && j == 0 && k == 0 ) continue;
@@ -117,6 +129,8 @@ bool Simulation::next_to_border(long x, long y, long z) {
 					return true;
 
 			}
+		}
+	}
 			
 	return false;
 }

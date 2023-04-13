@@ -151,7 +151,7 @@ GLuint VertexBufferHandle::value() const {
 IndexBufferHandle::IndexBufferHandle()
 	: iboID(0) // Due to OpenGL syntax, we can't initial directly here, like we want.
 {
-	glGenBuffers(1, &vboID);
+	glGenBuffers(1, &iboID);
 }
 
 

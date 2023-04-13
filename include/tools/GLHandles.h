@@ -170,7 +170,7 @@ public:
 	IndexBufferHandle& operator=(IndexBufferHandle&& other) noexcept;
 
 	// Clean up after ourselves.
-	~VertexBufferHandle();
+	~IndexBufferHandle();
 
 
 	// Allow casting from this type into a GLuint

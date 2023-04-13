@@ -41,13 +41,13 @@ void Simulation::render() {
 
 	points.clear();
 	normals.clear();
-	colors.clear();
+	cols.clear();
 
 	std::unordered_map<fcoord, size_t> point_map;
 	std::vector<float> angles; 
 
 
-	for (int i = 0; i < bborder_length; i++) {
+	for (int i = 0; i < border_length; i++) {
 
 		auto cell = grid(border[i].x, border[i].y, border[i].z);
 
@@ -56,18 +56,21 @@ void Simulation::render() {
 		int local_colors[8];
 		int num_local_colors = 0;
 
-		for (int i = 0; i <=1; i++)
-			for (int j = 0; j <= 1; j++)
+		for (int i = 0; i <=1; i++) {
+			for (int j = 0; j <= 1; j++) {
 				for (int k = 0; k <= 1; k++) {
 					auto other_cell = grid(cell->x + i, cell->y + j, cell->z + k);
-					if (other_cell && !is_present(other_cell->color, local_colors, num_local_colors))
+					if (other_cell && !is_present(other_cell->color, local_colors, num_local_colors) && other_cell->color != BOUNDARY)
 						local_colors[num_local_colors++] = other_cell->color;
+				}
+			}
 		}
 
 
 		for (int colorp = 0; colorp < num_local_colors; colorp++) {
 
 			int color = local_colors[colorp];
+			if (color == FREESPACE) continue;
 
 			glm::vec3 c = color_map[color];
 			const char* table_p = TRIANGLE_TABLE[get_index(color, cell->x,cell->y,cell->z, false)];
@@ -82,8 +85,8 @@ void Simulation::render() {
 				glm::vec3 normal = glm::normalize(glm::cross(p2-p1, p3-p1));
 
 				float theta1 = acos(glm::dot(p2 - p1, p3 - p1)/(glm::length(p2 - p1)*glm::length(p3 - p1)));
-				float theta2 = acos(glm::dot(p3 - p2, p1 - p2)/(glm::length(p2 - p1)*glm::length(p3 - p1)));
-				float theta3 = acos(glm::dot(p2 - p3, p1 - p3)/(glm::length(p2 - p1)*glm::length(p3 - p1)));
+				float theta2 = acos(glm::dot(p3 - p2, p1 - p2)/(glm::length(p3 - p2)*glm::length(p1 - p2)));
+				float theta3 = acos(glm::dot(p2 - p3, p1 - p3)/(glm::length(p2 - p3)*glm::length(p1 - p3)));
 
 				auto fcoord1 = fcoord(p1.x, p1.y, p1.z, color);
 				auto fcoord2 = fcoord(p2.x, p2.y, p2.z, color);

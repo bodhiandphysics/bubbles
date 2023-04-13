@@ -4,7 +4,7 @@
 #include <vector>
 #include <limits>
 #include <functional>
-#include <unordered_map>
+
 
 // Window.h `#include`s ImGui, GLFW, and glad in correct order.
 #include "Window.h"
@@ -14,13 +14,11 @@
 #include "Log.h"
 #include "ShaderProgram.h"
 #include "Shader.h"
-#include "Texture.h"
 #include "Camera.h"
-
-#include "GeomLoaderForOBJ.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include "marchingcubes.h"
 
 // EXAMPLE CALLBACKS
 class Callbacks3D : public CallbackInterface {
@@ -91,16 +89,12 @@ public:
 	}
 
 	void updateShadingUniforms(
-		const glm::vec3& lightPos, const glm::vec3& lightCol,
-		const glm::vec3& diffuseCol, float ambientStrength, bool texExistence
-	)
+		const glm::vec3& lightPos, const glm::vec3& lightCol, float ambientStrength, bool texExistence)
 	{
 		// Like viewPipeline(), this function assumes shader.use() was called before.
 		glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
 		glUniform3f(lightColLoc, lightCol.r, lightCol.g, lightCol.b);
-		glUniform3f(diffuseColLoc, diffuseCol.r, diffuseCol.g, diffuseCol.b);
 		glUniform1f(ambientStrengthLoc, ambientStrength);
-		glUniform1i(texExistenceLoc, (int)texExistence);
 	}
 
 	// Converts the cursor position from screen coordinates to GL coordinates
@@ -129,9 +123,7 @@ private:
 		pLoc = glGetUniformLocation(shader, "P");;
 		lightPosLoc = glGetUniformLocation(shader, "lightPos");;
 		lightColLoc = glGetUniformLocation(shader, "lightCol");;
-		diffuseColLoc = glGetUniformLocation(shader, "diffuseCol");;
 		ambientStrengthLoc = glGetUniformLocation(shader, "ambientStrength");;
-		texExistenceLoc = glGetUniformLocation(shader, "texExistence");;
 	}
 
 	int screenWidth;
@@ -148,9 +140,7 @@ private:
 	GLint pLoc;
 	GLint lightPosLoc;
 	GLint lightColLoc;
-	GLint diffuseColLoc;
 	GLint ambientStrengthLoc;
-	GLint texExistenceLoc;
 
 	ShaderProgram& shader;
 
@@ -181,36 +171,51 @@ int main() {
 	window.setupImGui(); // Make sure this call comes AFTER GLFW callbacks set.
 
 	// Some variables for shading that ImGui may alter.
-	glm::vec3 lightPos(0.f, 35.f, -35.f);
+	glm::vec3 lightPos(0.f, 0.f, 35.f);
 	glm::vec3 lightCol(1.f);
-	glm::vec3 diffuseCol(1.f, 0.f, 0.f);
 	float ambientStrength = 0.035f;
 	bool simpleWireframe = false;
 
 	// Set the initial, default values of the shading uniforms.
 	shader.use();
-	cb->updateShadingUniforms(lightPos, lightCol, diffuseCol, ambientStrength, texExistence);
+	cb->updateShadingUniforms(lightPos, lightCol, ambientStrength, false);
 
-	std::vector<glm::vec3> cmap = {glm::vec3(0), glm::vec3{1.f, 0.f, 0.f}};
-	std::vector<float> P0 = {.5f, 1.f};
-	std::vector<fcoord> x0 = {fcoord(5.f, 5.f, 5.f)};
-	std::vector<float> r0 = {1.f};
+	float scale = .01f;
+	std::vector<glm::vec3> cmap = {glm::vec3(0), glm::vec3{1.f, 0.f, 0.f}, glm::vec3{0.f, 1.f, 0.f}};
+	std::vector<float> P0 = {1.f, 5.f, 1.f};
+	std::vector<fcoord> x0{fcoord(scale * 50.f, scale * 50.f, scale * 50.f, 1)};
+	std::vector<float> r0 = {5 * scale};
 
 	Simulation sim = Simulation(
-								128, 128, 128, .1f // 128 by 128 by 128 voxels at .1 scale
-								P0, x0, r0 // pressures, positions, radius
- 								)
-
+								100, 100, 100, scale, // 128 by 128 by 128 voxels at .1 scale
+								cmap, P0, x0, r0 // color map, pressures, positions, radius
+ 								);
+	bool do_one_iter = false;
+	bool play = false;
 	// RENDER LOOP
 	while (!window.shouldClose()) {
 		glfwPollEvents();
+
 
 
 		// Three functions that must be called each new frame.
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+		ImGui::Begin("Controls");
+		if (!play) {
+			if (ImGui::Button("Play"))
+				play = true;
+			if (ImGui::Button("One Iter"))
+				do_one_iter = true;
+		} else {
+			if (ImGui::Button("Pause"))
+				play = false;
+		}
+		ImGui::End();
+
 		ImGui::Render();
+
 
 		glEnable(GL_LINE_SMOOTH);
 		glEnable(GL_FRAMEBUFFER_SRGB);
@@ -222,8 +227,18 @@ int main() {
 		shader.use();
 		cb->viewPipeline();
 
+		if (!play && do_one_iter) {
+
+			do_one_iter = false;
+			sim.run_sim_iteration();
+		}
+
+		if (play) {
+
+			sim.run_sim_iteration();
+		}
 		sim.render();
-		bubles.setVerts(sim.points);
+		bubbles.setVerts(sim.points);
 		bubbles.setCols(sim.cols);
 		bubbles.setNormals(sim.normals);
 		bubbles.setIndexes(sim.indexes);

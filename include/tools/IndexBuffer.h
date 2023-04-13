@@ -8,7 +8,7 @@
 class IndexBuffer {
 
 public:
-	IndexBuffer(GLuint index, GLint size);
+	IndexBuffer();
 
 	// Because we're using the IndexBufferHandle to do RAII for the buffer for us
 	// and our other types are trivial or provide their own RAII

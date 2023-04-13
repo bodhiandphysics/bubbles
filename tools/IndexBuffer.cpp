@@ -3,7 +3,7 @@
 #include <utility>
 
 
-IndexBuffer::IndexBuffer(GLuint index, GLint size)
+IndexBuffer::IndexBuffer()
 	: bufferID{}
 {}
 

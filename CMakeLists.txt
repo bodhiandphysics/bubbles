@@ -56,12 +56,15 @@ include_directories(thirdparty/tinyobjloader-2.0.0rc10)
 find_package(OpenGL REQUIRED)
 set(LIBRARIES ${LIBRARIES} ${OPENGL_gl_LIBRARY})
 
+find_package(OpenMP REQUIRED)
+set (LIBRARIES ${LIBRARIES} ${OpenMP_CXX_LIBRARIES})
+
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	list(APPEND _589_689_CMAKE_CXX_FLAGS ${_589_689_CMAKE_CXX_FLAGS} "-Wall" "-pedantic")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	# using GCC
-	list(APPEND _589_689_CMAKE_CXX_FLAGS ${_589_689_CMAKE_CXX_FLAGS} "-fdiagnostics-color=always -fopenmp" "-Wall" "-pedantic" "-Wconversion")
+	list(APPEND _589_689_CMAKE_CXX_FLAGS ${_589_689_CMAKE_CXX_FLAGS} "-fdiagnostics-color=always" "-fopenmp" "-Wall" "-pedantic" "-Wconversion")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
 	# using Intel C++
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
@@ -91,12 +94,14 @@ add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD=ON)
 # include_directories(src)
 
 
+set(INCLUDES ${INCLUDES} "include" "include/tools")
 # Compile our main application
 file(GLOB SOURCES
-    src/*
+    src/*.cpp
+  	tools/*.cpp
 	thirdparty/imgui-1.89.2/*.cpp
 )
-#set(INCLUDES ${INCLUDES} "include" "include/tools")
+
 
 set(APP_NAME "bubbles")
 

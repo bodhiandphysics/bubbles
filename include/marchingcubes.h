@@ -2,6 +2,7 @@
 #define MARCHINGCUBES_HPP
 #include <assert.h>
 #include <atomic>
+#include <glad/glad.h>
 #include <vector>
 #include <unordered_map>
 #include <optional>
@@ -40,7 +41,7 @@ struct fcoord {
 	float z;
 	int color;
 
-	fcoord(float x, float y, float , int color): x(x), y(y), z(z), color(color) {}
+	fcoord(float x, float y, float z, int color): x(x), y(y), z(z), color(color) {}
 	bool operator==(const fcoord& other) const {
 
 		return (x == other.x && y == other.y && z == other.z && color == other.color);
@@ -60,6 +61,7 @@ struct Pot{
 
 	int color;
 	int new_color;
+	int old_color;
 	bool on_border = false;
 	bool already_draw = false;
 	long x;
@@ -110,7 +112,7 @@ struct Simulation {
 	const int FREESPACE = 0;
 	const int BOUNDARY = INT_MAX;
 
-	float ALPHA = 1;
+	float ALPHA =100;
 	float BETA = 1;
 	Grid<Pot> grid;
 	float scale = 1.f;
@@ -137,7 +139,7 @@ struct Simulation {
 	int num_points = 0;
 	std::vector<glm::vec3> normals;
 	std::vector<glm::vec3> cols;
-	std::vector<GLint> indexes; 
+	std::vector<GLuint> indexes; 
 
 	void flip(long x, long y, long z);
 	void flip_cells();
@@ -151,7 +153,7 @@ struct Simulation {
 	float get_surface_area(long x, long y, long z, bool old = true, 
 							      bool flipped = false, int fcolor = 0, 
 								  int fx = 0, int fy = 0, int fz = 0);
-	bool on_border(long x, long y, long z);
+	bool on_border(long x, long y, long z, bool old = true);
 	bool on_border(coord at);
 	bool next_to_border(long x, long y, long z);
 	bool next_to_border(coord at);
@@ -167,12 +169,13 @@ struct Simulation {
 					   std::vector<float> the_pressures,
 					   std::vector<fcoord> bubbles,
 					   std::vector<float> radii);
-	~Simulation();
+
+	~Simulation() {free(volumes);}
 	void render();
 
 
 private:
-	std::vector<std::atomic<int> > volumes;
+	std::atomic<int>* volumes;
 
 
 };
